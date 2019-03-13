@@ -4,15 +4,35 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+/**
+ * <p>Clase que implementa la interfaz Collection.<p>
+ * Una coleccion cuenta con un numero definido de elementos.
+ */
+
+/*
+ * Características de *esta* la colección:
+ * - Permite elementos nulos
+ * - Permite elementos repetidos
+ * - El tamaño de la colección sólo es modificada por el iterador y el método add
+ * - (Curiosamente) A pesar de poder contener elementos repetidos, no es posible agregar a la colección actual, una copia de sí misma
+ * - Los elementos no necesariamente cumplen con un criterio de orden
+ */
 public abstract class ColeccionAbstracta<E> implements Collection<E> {
 
-    /* Numero de elementos que tiene la estructura */
+    /* Cantidad de elementos que tiene la estructura */
     protected int tam = 0;
 
+    /**
+     * Agrega todos los elementos a la colección.
+     * Se permite agregar elemento nulos a la colección.
+     * @param colección con elementos por agregar. La colección se agrega si es
+     * distinta de <code>null<code> y distinta de sí misma.
+     * @return <tt>true</tt> si se agregó al menos un elemento a la
+     * colección, <tt>false</tt> en otro caso.
+     */
     @Override
     public boolean addAll(Collection<? extends E> c) throws  NullPointerException,
-                                                             IllegalArgumentException,
-                                                             IllegalStateException {
+                                                             IllegalArgumentException {
         boolean coleccionModificada = false;
         if(c == null) {
             throw new NullPointerException();
@@ -22,97 +42,168 @@ public abstract class ColeccionAbstracta<E> implements Collection<E> {
             throw new IllegalArgumentException("Intentas agregar una copia de esta coleccion");
         }
 
-        Iterator<?> transeunte = c.iterator();
-
-        while(transeunte.hasNext()) {
-            E porAgregar = (E) transeunte.next();
-            this.add(porAgregar);
+        // Se puede hacer que elemento sea de tipo ( instancia(?) ) E porque ? extiende a E
+        for(E elemento : c) {
+            this.add(elemento);
+            //consideramos que el método add aumenta el tamaño de la estructura
+            //this.tam++;
             coleccionModificada = true;
+
         }
+
         return coleccionModificada;
     }
 
+    /**
+     * Elimina todos los elementos de la estructura
+     */
     @Override
-    /* Elimina todos los elementos de la estructura */
     public void clear() {
+        // No se utilizó for-each porque no es seguro con  remove() adentro.
         Iterator<E> transeunte = this.iterator();
         while(transeunte.hasNext()) {
             transeunte.next();
             transeunte.remove();
+            //Consideramos que remove disminuye el tamaño
+            //this.tam--
         }
     }
 
+    /**
+     * Verifica si la coleccion contiene al objeto o.
+     * @param o objeto a buscar en la estructura
+     * @return <tt>true</tt> si el objeto aparece al menos una vez en
+     * la colección
+     */
     @Override
     public boolean contains(Object o) throws NullPointerException {
-        Iterator<E> transeunte = this.iterator();
-        while(transeunte.hasNext()) {
-            Object elemento = transeunte.next();
-            if(elemento == null && o == null) {
-                return true;
-            }
-
-            if(elemento == null) {
-                continue;
-            }
-
+        for(E elemento : this) {
+            if(elemento == null && o == null) return true;
+            if(elemento == null) continue;
             if(elemento.equals(o)) return true;
         }
+
         return false;
     }
 
+    /**
+     * Verifica que si la colección contiene todos los elementos de la
+     * coleccion c.
+     * @param c colección de la cual se va a verificar la
+     * contención. Solo se verifica la contención si c es distinto de
+     * <code>null<code>
+     * @return <tt>true</tt> si la colección contiene todos los
+     * elementos de la colección c <tt>false</tt> en otro caso.
+     */
     @Override
     /* Equivalente a ¿c es subconjunto de this? */
     public boolean containsAll(Collection<?> c) throws NullPointerException {
         if(c == null) {
             throw new NullPointerException();
         }
-
-        Iterator<?> transeunte = c.iterator();
-        while(transeunte.hasNext()) {
-            if(!this.contains(transeunte.next())) return false;
+        //duda ¿que pasa si es elemento = null ? se rompe con la asignacion a object? en caso de que sí ¿qué pasa cuando entra a contains?
+        //en caso de que elemento sea  null y se rompa con la asignación a object hay que dejar la implementacion con el iterador
+        for(Object elemento : c) {
+            if(!this.contains(elemento)) return false;
         }
         return true;
     }
 
+    /**
+     * Nos dice si dos objetos son iguales.
+     * El criterio de igualdad se cumple si dos estructuras tienen a los mismos elementos y están en la misma posición.
+     * @param o el objeto con el cual se va a comparar
+     * @return <tt>true</tt> si los objetos son iguales, <tt>false</tt> si no.
+     */
+    @Override
+    //revisar, todavia podría haber casos que no estoy considerando
     public boolean equals(Object o) {
         if(o == null) return false;
-        return this.toString() == o.toString();
+
+        if(!(o instanceof Collection<?>)) return false;
+
+        Collection<?> objetoEquivalente = (Collection<?>) o;
+
+        if(this.size() != objetoEquivalente.size()) return false;
+
+        Iterator<E> checador = this.iterator();
+        Iterator<?> checador2 = objetoEquivalente.iterator();
+
+        while(checador.hasNext()) {
+            E elemento = checador.next();
+            Object elemento2 = checador2.next();
+            if(elemento == null) {
+                if(!(elemento == null)) return false;
+                continue;
+            }
+
+            if(!elemento.equals(elemento)) return false;
+        }
+        return true;
     }
 
+    /**
+     * Nos da un código identificador único para cada objeto.
+     * @return identificador el código con el cual el objeto se identifica.
+     */
     @Override
-    /* El hashcode de nuestros objetos es suma del hash de cada uno de sus objetos */
+    /* El hashcode de nuestra colección es suma del hash de cada uno de los objetos que contiene */
+    //Duda ¿qué pasa si  dos estructuras contienen solo elementos nulos?
+    //En caso de que se utilice el hash para verificar igualdad, tendríamos que dos objetos que contienen solo elementos nulos
+    //su hashcode es igual sin importar cuantos null tengan
     public int hashCode() {
         int identificador = 0;
         for(E elemento: this) {
+            if(elemento == null) continue;
             identificador += elemento.hashCode();
         }
         return identificador;
     }
 
-    @Override //Lo que sigue se puede a hacer con  un for each
-    /* Elimina (si existe) sólo la primera ocurrencia del elemento en la coleccion */
+    /**
+     * Nos dice si la colección no contiene elementos
+     * @return <tt>true</tt> si la colección es vacía, <tt>false</tt> en otro caso.
+     */
+    public boolean isEmpty() {
+        return this.size() == 0;
+    }
+
+    /**
+     * Elimina en la colección (si existe) sólo la primera instancia del elemento especificado
+     * @param o el objeto a eliminar (si existe) en la colección.
+     * @return <tt>true</tt> si se elimina una instancia de la colección, <tt>false</tt> si no.
+     */
+    @Override
+    //No se puede usar for-each pues se utiliza .remove()
     public boolean remove(Object o) throws NullPointerException {
         Iterator<E> transeunte = this.iterator();
         while(transeunte.hasNext()) {
             Object elemento = transeunte.next();
             if(elemento == null && o == null) {
                 transeunte.remove();
-                this.tam--;
+                return true;
+                //el control del tamaño de la colección está en el iterador
+                //this.tam--;
             }
+
             if(elemento == null) {
                 continue;
             }
 
             if(elemento.equals(o)) {
                 transeunte.remove();
-                this.tam--;
                 return true;
             }
         }
         return false;
     }
 
-    @Override //Lo que sigue se puede implementar con un for each
+    /**
+     * Elimina todas las ocurrencias de la colección, que estén contenidas en la colección c
+     * @param c la colección que indica qué elementos se eliminarán de la colección que manda llamar el método
+     * @return <tt>true</tt> si al menos un elemento de la colección fue eliminado, <tt>false</tt> en otro caso.
+     */
+    @Override
     /* Diferencia de conjuntos A\B */
     public boolean removeAll(Collection <?> c) throws NullPointerException {
         boolean coleccionModificada = false;
@@ -120,84 +211,101 @@ public abstract class ColeccionAbstracta<E> implements Collection<E> {
             throw new NullPointerException();
         }
 
-        Iterator<?> checador = c.iterator();
+        Iterator<E> checador = this.iterator();
 
         while(checador.hasNext()) {
-            Object elemento = checador.next();
-            if(this.contains(elemento)) {
-                this.remove(elemento);
+            if(c.contains(checador.next())) {
+                checador.remove();
                 coleccionModificada = true;
             }
         }
+
         return coleccionModificada;
     }
 
+    /**
+     * Al finalizar este método, la colección sólo conserva los
+     * elementos que tiene en común con la colección c
+     * @param c coleccion tal que será referencia para decidir qué
+     * elementos permanecen en la colección
+     * @return <tt>true</tt> si se eliminó al menos un elemento de la
+     * colección que manda a llamar al método, <tt>false</tt> en otro
+     * caso.
+     */
     @Override
     /* Interseccion de conjuntos */
-    //revisar si es la misma
+    /* No cambiar con estructura de for-each porque es inseguro usar .remove() adentro*/
     public boolean retainAll(Collection<?> c) throws NullPointerException {
         boolean coleccionModificada = false;
 
         if(c == null) {
             throw new NullPointerException();
         }
-
-
         Iterator<E> checador = this.iterator();
 
         while(checador.hasNext()) {
-            Object elemento = checador.next();
-            if(!(c.contains(elemento))) {
-                this.remove(elemento);
+            if(!(c.contains(checador.next()))) {
+                checador.remove();
                 coleccionModificada = true;
             }
         }
         return coleccionModificada;
     }
 
+    /**
+     * Indica la cantidad de elementos de nuestra colección
+     * @return tam cantidad de elementos que contiene la colección
+     */
     @Override
     public int size() {
         return tam;
     }
 
-    @Override //lo que sigue se puede hacer con un for each
-    /* Los elementos en este arreglo no necesariamente están ordenados */
+    /**
+     * Entrega un arreglo que contiene todos los elementos que existen
+     * actualmente en la colección y en el mismo orden en que están
+     * contenidos en ésta.
+     * @return representación arreglo con los elementos actuales de la
+     * colección.
+     */
+    @Override
+    /* Los elementos en este arreglo no necesariamente cumplen con un criterio de orden */
     public Object[] toArray() {
         Object[] representacion = new Object[this.size()];
         int contador = 0;
-        Iterator<E> transeunte = this.iterator();
 
-        while(transeunte.hasNext()) {
-            representacion[contador] = transeunte.next();
+        for(Object elemento : this) {
+            representacion[contador] = elemento;
             contador++;
         }
+
         return representacion;
     }
 
+    /**
+     * Entrega un arreglo de tipo T que contiene todos los elementos
+     * que existen actualmente en la colección y en el mismo orden en
+     * que están contenidos en la coleccion
+     * @return contenedor arreglo con los elementos actuales de la
+     * colección
+     */
     @Override
-    /* Los elementos en el arreglo no necesariamente están ordenados */
-    public <T> T[] toArray(T[] a) throws ArrayStoreException, NullPointerException {
+    /* Los elementos en el arreglo no necesariamente cumplen con un criterio de orden */
+    public <T> T[] toArray(T[] a) throws NullPointerException {
         if(a == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("El arreglo no puede ser nulo");
         }
 
-        int nvoTam;
-        if(a.length >= this.size()) {
-            nvoTam = a.length;
-        }
-        else {
-            nvoTam = this.size();
-        }
+        int nvoTam = a.length >= this.size() ? a.length : this.size();
 
-        T[]  contenedor = Arrays.copyOf(a,nvoTam);
-
+        T[] contenedor = Arrays.copyOf(a,nvoTam);
         int contador = 0;
-        Iterator<E> transeunte = this.iterator();
-        while(transeunte.hasNext()) {
-            T elemento = (T) transeunte.next();
-            contenedor[contador] = elemento;
+        for(Object elemento: this) {
+            T aux = (T) elemento;
+            contenedor[contador] = aux;
             contador++;
         }
+
         return contenedor;
     }
 
@@ -213,10 +321,7 @@ public abstract class ColeccionAbstracta<E> implements Collection<E> {
         return representacion;
     }
 
-    //metodos por implementar dependiendo de cada clase
     public abstract boolean add(E e);
 
     public abstract Iterator<E> iterator();
-
-    public abstract boolean isEmpty();
 }

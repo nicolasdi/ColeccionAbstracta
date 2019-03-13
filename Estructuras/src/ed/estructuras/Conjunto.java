@@ -102,9 +102,4 @@ public class Conjunto<E> extends ColeccionAbstracta<E> {
         tam++;
         return true;
     }
-
-    @Override
-    public boolean isEmpty() {
-        return this.tam == 0;
-    }
 }
