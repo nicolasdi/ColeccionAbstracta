@@ -10,22 +10,21 @@ import java.util.Iterator;
  */
 
 /*
- * Características de *esta* la colección:
- * - Permite elementos nulos
- * - Permite elementos repetidos
- * - El tamaño de la colección sólo es modificada por el iterador y el método add
- * - (Curiosamente) A pesar de poder contener elementos repetidos, no es posible agregar a la colección actual, una copia de sí misma
- * - Los elementos no necesariamente cumplen con un criterio de orden
- */
+*** Características de *esta* la colección:
+* - Permite elementos nulos
+* - Permite elementos repetidos
+* - Los elementos no necesariamente cumplen con un criterio de orden
+*** Detalles de la Implementación
+* - Para métodos que modifican a la colección. El tamaño de la colección sólo es modificada por el iterador y el método add
+*/
 public abstract class ColeccionAbstracta<E> implements Collection<E> {
 
     /* Cantidad de elementos que tiene la estructura */
     protected int tam = 0;
 
     /**
-     * Agrega todos los elementos a la colección.
-     * Se permite agregar elemento nulos a la colección.
-     * @param colección con elementos por agregar. La colección se agrega si es
+     * Agrega todos los elementos de la colección c a la colección que manda a llamar el método.
+     * @param c colección con elementos por agregar. La colección se agrega si es
      * distinta de <code>null<code> y distinta de sí misma.
      * @return <tt>true</tt> si se agregó al menos un elemento a la
      * colección, <tt>false</tt> en otro caso.
@@ -38,8 +37,8 @@ public abstract class ColeccionAbstracta<E> implements Collection<E> {
             throw new NullPointerException();
         }
 
-        if(c.equals(this)) {
-            throw new IllegalArgumentException("Intentas agregar una copia de esta coleccion");
+        if(c == this) {
+            throw new IllegalArgumentException("Intentas agregar esta colección a sí misma");
         }
 
         // Se puede hacer que elemento sea de tipo ( instancia(?) ) E porque ? extiende a E
@@ -87,7 +86,7 @@ public abstract class ColeccionAbstracta<E> implements Collection<E> {
     }
 
     /**
-     * Verifica que si la colección contiene todos los elementos de la
+     * Verifica si la colección contiene todos los elementos de la
      * coleccion c.
      * @param c colección de la cual se va a verificar la
      * contención. Solo se verifica la contención si c es distinto de
@@ -241,6 +240,10 @@ public abstract class ColeccionAbstracta<E> implements Collection<E> {
         if(c == null) {
             throw new NullPointerException();
         }
+        if(c == this) {
+            return coleccionModificada;
+        }
+
         Iterator<E> checador = this.iterator();
 
         while(checador.hasNext()) {
@@ -296,7 +299,25 @@ public abstract class ColeccionAbstracta<E> implements Collection<E> {
             throw new NullPointerException("El arreglo no puede ser nulo");
         }
 
-        int nvoTam = a.length >= this.size() ? a.length : this.size();
+        if(this.isEmpty()) return a;
+
+        //Caso en que el tamaño del arreglo es suficiente para la
+        //colección
+        if(a.length >= this.size()) {
+            Iterator<E> copiador = this.iterator();
+            for(int i = 0; i < a.length; i++) {
+
+                if(copiador.hasNext()) {
+                    T aux = (T) copiador.next();
+                    a[i] = aux;
+                    continue;
+                }
+                a[i] = null;
+            }
+            return a;
+        }
+
+        int nvoTam = this.size();
 
         T[] contenedor = Arrays.copyOf(a,nvoTam);
         int contador = 0;
